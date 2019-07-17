@@ -16,7 +16,7 @@ function _init()
 	--activate mouse detection
 	poke(0x5f2d,1)
 	
-	scene_cur=scene_menu
+	scene_cur=scene_game
 	scene_cur:init()
 end
 
@@ -116,6 +116,22 @@ kick_def={
 		{{0,0},{-1,0},{-1,1},{0,-2},{-1,-2}}
 	}
 }
+
+--scores for different numbers of lines cleared
+score_def={
+	100,300,500,800
+}
+
+function getscoretext(val)
+	local s = ""
+	local v = abs(val)
+    repeat
+        s = (v % 0x0.000a / 0x.0001)..s
+        v /= 10
+    until v==0
+	if (val<0)  s = "-"..s
+	return s
+end 
 
 function draw_crosshair()
 	sspr(ch_def[ch_cur][1]*8,ch_def[ch_cur][2]*8,16,16,stat(32)-8,stat(33)-8)
@@ -331,7 +347,7 @@ scene_game={
 		print("score",13*8-2,13*8,7)
 
 		--draw score
-		local score_str=tostr(self.score)
+		local score_str=tostr(getscoretext(self.score))
 		print(score_str,15*8+2-#score_str*4,14*8+1,5)
 		print(score_str,15*8+2-#score_str*4,14*8,7)
 
@@ -596,7 +612,7 @@ scene_game={
 			self.effect_acc+=1
 			if self.effect_acc>=self.effect_fm then
 				--update score
-				self.score+=shl(1,self.trim.n-1)
+				self:add_score(score_def[self.trim.n])
 				--end effects
 				screen_shake:reset(0,0)
 				laser:reset({},0)
@@ -690,6 +706,10 @@ scene_game={
 
 		--piece could not be wall-kicked
 		self.tet_rot=last_rot
+	end,
+
+	add_score=function(self,score)
+		self.score+=shr(score,16)
 	end
 }
 
@@ -704,15 +724,53 @@ screen_shake={
 		self.amt=amt
 		self.dur=dur
 		self.fade=amt/dur
-		t=0
+		self.t=0
 		camera(0,0)
 	end,
 
 	update=function(self)
-		t+=1
-		camera(cos(t/3)*self.amt,cos(t/2)*self.amt)
+		self.t+=1
+		camera(cos(self.t/3)*self.amt,cos(self.t/2)*self.amt)
 		self.amt-=self.fade
 		self.amt=max(0,self.amt)
+	end
+}
+
+screen_shake_two={
+	angle=0,
+	intensity=0,
+	duration=0,
+	speed=0,
+	time=0,
+	finished=false,
+	x=0,
+	y=0,
+
+	reset=function(self,angle,intensity,duration,speed)
+		self.angle=angle
+		self.intensity=intensity
+		self.duration=duration
+		self.speed=speed
+		self.time=duration
+		self.finished=false
+		self.x=cos(angle)
+		self.y=sin(angle)
+	end,
+
+	update=function(self)
+		if self.time > 0 then
+			self.time-=1
+		else
+			self.finished=true
+		end
+
+		if not self.finished then
+			local perc=sqrt(self.time/self.duration)
+			local r=perc*sin(self.time*self.speed*perc)*self.intensity
+			local dx=self.x*r
+			local dy=self.y*r
+			camera(dx,dy)
+		end
 	end
 }
 
