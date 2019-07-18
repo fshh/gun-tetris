@@ -284,6 +284,12 @@ end
 scene_game={
 	--score
 	score=0,
+	--extra points from hard drop
+	hard=0,
+	--extra points from soft drop
+	soft=0,
+	--multiplier from consecutive line clears
+	combo=1,
 
 	--next and held tetromino
 	tet_next=0,
@@ -316,6 +322,9 @@ scene_game={
 
 	init=function(self)
 		self.score=0
+		self.hard=0
+		self.soft=0
+		self.combo=1
 		self.tet_cur=0
 		self.tet_rot=0
 		self.state=1
@@ -343,13 +352,15 @@ scene_game={
 		print("next",13*8,1*8,7)
 		print("hold",13*8,9*8+1,5)
 		print("hold",13*8,9*8,7)
-		print("score",13*8-2,13*8+1,5)
-		print("score",13*8-2,13*8,7)
+		print(tostr(self.combo).."x",13*8,13*8+1,10)
+		print(tostr(self.combo).."x",13*8,13*8,9)
+		print("score",13*8-2,14*8+1,5)
+		print("score",13*8-2,14*8,7)
 
 		--draw score
 		local score_str=tostr(getscoretext(self.score))
-		print(score_str,15*8+2-#score_str*4,14*8+1,5)
-		print(score_str,15*8+2-#score_str*4,14*8,7)
+		print(score_str,15*8+2-#score_str*4,15*8+1,5)
+		print(score_str,15*8+2-#score_str*4,15*8,7)
 
 		--draw tetromino
 		if self.state!=1 and self.state!=5 then
@@ -408,6 +419,8 @@ scene_game={
 		--state 1: choose new tetromino
 		function(self)
 			--cleanup
+			self.hard=0
+			self.soft=0
 			self.hold_count=0
 			self.speed_acc=0
 
@@ -473,12 +486,14 @@ scene_game={
 
 			--move down
 			if btnp(3) then
+				self.soft+=1
 				self.speed_acc+=1
 			end
 
 			--manual landing
 			if btnp(2) then
 				while not self:is_collided(0,1) do
+					self.hard+=2
 					self.tet_y+=1
 				end
 				self.trim=field:land(
@@ -495,6 +510,7 @@ scene_game={
 					self.state=5
 				--choose next tetromino
 				else
+					self.combo=1
 					self.state=1
 				end
 				return
@@ -595,6 +611,7 @@ scene_game={
 					self.state=5
 				--choose next tetromino
 				else
+					self.combo=1
 					self.state=1
 				end
 			end
@@ -611,8 +628,16 @@ scene_game={
 
 			self.effect_acc+=1
 			if self.effect_acc>=self.effect_fm then
+				--score based on lines cleared and lines dropped
+				local score=score_def[self.trim.n]+self.hard
+				--calculate combo multiplier
+				self.combo=self.combo+(2*self.trim.n)-2
+				--apply combo multiplier
+				score*=self.combo
+				--10x multiplier for perfect clear
+				if (field.fixl[1].bits==0) score*=10
 				--update score
-				self:add_score(score_def[self.trim.n])
+				self:add_score(score)
 				--end effects
 				screen_shake:reset(0,0)
 				laser:reset({},0)
@@ -623,6 +648,8 @@ scene_game={
 
 		--state 6: hold
 		function(self)
+			self.hard=0
+			self.soft=0
 			self.speed_acc=0
 
 			--exchange current to held
