@@ -2,6 +2,12 @@
 
 - Gun-based input
 - Swapping guns
+- Gun effects
+ - Screenshake
+ - Explosions
+ - Sounds
+ - Etc
+- Ammo? Maybe?
 - Additional laser effects
  - Sound
  - Particles
