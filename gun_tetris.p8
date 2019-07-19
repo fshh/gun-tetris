@@ -143,6 +143,15 @@ function mouse_in_region(x,y,w,h)
 	return (xgood and ygood)
 end
 
+function mouse_down()
+	return band(stat(34),1)
+end
+
+--print string centered on the screen
+function printc(str,y,col)
+	print(str,64-((#str*4)/2),y,col)
+end
+
 field={
 	--screen offset
 	x=1,
@@ -358,7 +367,7 @@ scene_game={
 		print("score",13*8-2,14*8,7)
 
 		--draw score
-		local score_str=tostr(getscoretext(self.score))
+		local score_str=getscoretext(self.score)
 		print(score_str,15*8+2-#score_str*4,15*8+1,5)
 		print(score_str,15*8+2-#score_str*4,15*8,7)
 
@@ -619,7 +628,8 @@ scene_game={
 
 		--state 4: game over
 		function(self)
-			--todo:game over
+			scene_end:init(self.score)
+			scene_cur=scene_end
 		end,
 
 		--state 5: showing effect
@@ -832,11 +842,6 @@ laser={
 	end
 }
 
---print string centered on the screen
-function printc(str,y,col)
-	print(str,64-((#str*4)/2),y,col)
-end
-
 scene_menu={
 	selections={
 		"start",
@@ -854,8 +859,8 @@ scene_menu={
 	cur=0,
 
 	init=function(self)
-		self.highscore=tostr(dget(0))
-
+		self.highscore=getscoretext(dget(0))
+		self.cur=0
 		ch_cur=1
 	end,
 
@@ -867,6 +872,19 @@ scene_menu={
 			if mouse_in_region(x,self.sely+(k*8),w,6) then
 				self.cur=k
 				break
+			end
+		end
+
+		if mouse_down() and self.cur>0 then
+			if self.cur==1 then
+				scene_game:init()
+				scene_cur=scene_game
+			elseif self.cur==2 then
+
+			elseif self.cur==3 then
+
+			elseif self.cur==4 then
+
 			end
 		end
 	end,
@@ -888,6 +906,43 @@ scene_menu={
 		end
 
 		draw_crosshair()
+	end
+}
+
+scene_end={
+	high=0,
+	new=0,
+
+	init=function(self,new)
+		self.high=dget(0)
+		self.new=new
+		-- save high score
+		if (self.new>self.high) dset(0,self.new) end
+	end,
+
+	update=function(self)
+		if btnp(5) then
+			scene_menu:init()
+			scene_cur=scene_menu
+		end
+	end,
+
+	draw=function(self)
+		printc("game over",4*8+1,2)
+		printc("game over",4*8,8)
+
+		local hstr=getscoretext(self.high)
+		local nstr=getscoretext(self.new)
+
+		if (self.new<=self.high) then
+			printc("your score: "..nstr,7*8,4)
+			printc("high score: "..hstr,8*8,7)
+		else
+			printc("congratulations!",6*8,14)
+			printc("new high score: "..nstr,8*8,14)
+			printc("previous high score: "..hstr,9*8,7)
+		end
+		printc("x to return to menu",11*8,6)
 	end
 }
 
