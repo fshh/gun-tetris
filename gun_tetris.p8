@@ -16,7 +16,7 @@ function _init()
 	--activate mouse detection
 	poke(0x5f2d,1)
 	
-	scene_cur=scene_game
+	scene_cur=scene_menu
 	scene_cur:init()
 end
 
@@ -144,7 +144,7 @@ function mouse_in_region(x,y,w,h)
 end
 
 function mouse_down()
-	return band(stat(34),1)
+	return stat(34) == 0x1
 end
 
 --print string centered on the screen
@@ -845,8 +845,8 @@ laser={
 scene_menu={
 	selections={
 		"start",
-		"speed",
 		"options",
+		"credits",
 		"exit"
 	},
 
@@ -917,7 +917,7 @@ scene_end={
 		self.high=dget(0)
 		self.new=new
 		-- save high score
-		if (self.new>self.high) dset(0,self.new) end
+		if (self.new>self.high) dset(0,self.new)
 	end,
 
 	update=function(self)
