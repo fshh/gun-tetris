@@ -1,2 +1,2 @@
 # gun-tetris
-Tetris in PICO-8, controlled by lightgun mechanics.
+Tetris in PICO-8, with additional lightgun-inspired mechanics. WIP.
